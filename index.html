@@ -3,161 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Ultimate Image Studio (Vision Pro)</title>
+    <title>AI BG Remover Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: radial-gradient(circle at top right, #0f172a, #020617); color: #f8fafc; min-height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
-        .custom-input { background: rgba(3, 7, 18, 0.5); border: 1px solid #334155; color: #fff; }
-        .custom-input:focus { background: rgba(3, 7, 18, 0.7); border-color: #06b6d4; color: #fff; box-shadow: none; }
-        .img-preview-box { min-height: 450px; border: 2px dashed #475569; border-radius: 15px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); overflow: hidden; position: relative; }
-        #outputImg { max-width: 100%; border-radius: 10px; display: none; }
-        .btn-gen { background: linear-gradient(135deg, #0891b2, #2563eb); border: none; color: white; font-weight: 600; transition: 0.3s; }
-        .btn-gen:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(8, 145, 178, 0.4); color: white; }
-        
-        /* New Upload Styles */
-        .upload-area { border: 1px dashed #334155; padding: 10px; border-radius: 10px; cursor: pointer; text-align: center; transition: 0.3s; background: rgba(0,0,0,0.1); }
-        .upload-area:hover { border-color: #06b6d4; background: rgba(6, 182, 212, 0.05); }
-        #imageRefPreview { max-height: 80px; border-radius: 5px; display: none; margin-top: 10px; border: 1px solid #06b6d4; }
+        body { background: #0f172a; color: #f8fafc; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
+        .preview-box { 
+            min-height: 350px; border: 2px dashed #334155; border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; 
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), linear-gradient(-45deg, #1e293b 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e293b 75%), linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        #outputCanvas { max-width: 100%; border-radius: 10px; display: none; }
+        .btn-action { background: #06b6d4; border: none; color: white; font-weight: bold; }
+        .btn-action:hover { background: #0891b2; color: white; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-dark border-bottom border-secondary border-opacity-25 py-3">
-        <div class="container">
-            <span class="navbar-brand fw-bold text-info">AI VISION PRO</span>
-            <span class="badge bg-dark border border-secondary text-secondary">Image-to-Image Ready</span>
+    <nav class="navbar navbar-dark border-bottom border-secondary py-3">
+        <div class="container text-center">
+            <span class="navbar-brand fw-bold text-info mx-auto">AI BACKGROUND REMOVER</span>
         </div>
     </nav>
 
     <div class="container my-5">
         <div class="row g-4 justify-content-center">
             <div class="col-lg-5">
-                <div class="glass-card p-4">
-                    <h5 class="text-info mb-3">Create Magic</h5>
-                    
-                    <textarea id="promptInput" class="form-control custom-input mb-3" rows="5" placeholder="Describe your dream image or instructions for the upload..."></textarea>
-                    
-                    <div class="mb-4">
-                        <label class="text-secondary small mb-2">Reference Image (Optional)</label>
-                        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                            <span id="uploadText" class="small text-secondary">Click to upload reference image</span>
-                            <input type="file" id="fileInput" hidden accept="image/*">
-                            <center><img id="imageRefPreview" src=""></center>
-                        </div>
+                <div class="glass-card p-4 text-center">
+                    <h5 class="text-info mb-4">Step 1: Upload Image</h5>
+                    <input type="file" id="fileInput" class="form-control bg-dark text-light border-secondary mb-4" accept="image/*">
+                    <div id="originalPreview" class="mb-3">
+                        <p class="small text-secondary">Original preview will show here</p>
+                        <img id="sourceImg" src="" style="max-width: 100%; max-height: 200px; border-radius: 10px; display:none;">
                     </div>
-
-                    <button id="genBtn" class="btn btn-gen w-100 py-3">Generate Image</button>
+                    <button id="removeBtn" class="btn btn-action w-100 py-3" disabled>Remove Background</button>
                 </div>
             </div>
 
             <div class="col-lg-6">
                 <div class="glass-card p-4 text-center">
-                    <h5 class="text-start text-info mb-3">Result</h5>
-                    <div class="img-preview-box">
-                        <div id="loader" class="d-none text-center">
+                    <h5 class="text-start text-info mb-3">Step 2: Result</h5>
+                    <div class="preview-box">
+                        <div id="loader" class="d-none">
                             <div class="spinner-border text-info" role="status"></div>
-                            <p class="mt-3 text-info">AI is processing...<br><span class="small text-secondary">Mixing text and image data</span></p>
+                            <p class="mt-3 text-info">AI is removing background...<br><span class="small text-secondary">Processing on your browser (First time may take a moment)</span></p>
                         </div>
-                        <div id="msg" class="text-muted small">Your masterpiece will appear here</div>
-                        <img id="outputImg" src="" alt="AI Output">
+                        <canvas id="outputCanvas"></canvas>
                     </div>
-                    <a id="dlBtn" href="#" target="_blank" class="btn btn-outline-info w-100 mt-3 d-none">Download High-Res</a>
+                    <a id="downloadBtn" href="#" download="no-bg.png" class="btn btn-outline-info w-100 mt-3 d-none">Download Transparent PNG</a>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.js"></script>
+
     <script>
-        const btn = document.getElementById('genBtn');
-        const img = document.getElementById('outputImg');
-        const loader = document.getElementById('loader');
-        const msg = document.getElementById('msg');
-        const dl = document.getElementById('dlBtn');
         const fileInput = document.getElementById('fileInput');
-        const refPreview = document.getElementById('imageRefPreview');
-        const uploadText = document.getElementById('uploadText');
+        const sourceImg = document.getElementById('sourceImg');
+        const removeBtn = document.getElementById('removeBtn');
+        const canvas = document.getElementById('outputCanvas');
+        const loader = document.getElementById('loader');
+        const downloadBtn = document.getElementById('downloadBtn');
 
-        let base64Image = "";
-
-        // Handle File Selection
-        fileInput.addEventListener('change', function(e) {
+        // 1. Show preview when file is selected
+        fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    refPreview.src = event.target.result;
-                    refPreview.style.display = 'block';
-                    uploadText.style.display = 'none';
-                    // We extract the base64 but for this simple free API, 
-                    // we will use the prompt to describe the reference context if needed.
-                };
-                reader.readAsDataURL(file);
+                sourceImg.src = URL.createObjectURL(file);
+                sourceImg.style.display = 'block';
+                removeBtn.disabled = false;
             }
         });
 
-        btn.addEventListener('click', async () => {
-            const promptValue = document.getElementById('promptInput').value.trim();
-            if(!promptValue) return alert("Please enter a prompt!");
+        // 2. Remove Background Logic
+        removeBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
 
-            // UI Setup
-            img.style.display = 'none';
-            msg.classList.add('d-none');
+            // UI Reset
             loader.classList.remove('d-none');
-            dl.classList.add('d-none');
-            btn.disabled = true;
-
-            const seed = Math.floor(Math.random() * 1000000);
-            
-            // Image-to-Image Simulation: 
-            // Free APIs like Pollinations work best when you describe the style. 
-            // If an image is uploaded, we prepend "influenced by uploaded style" to the prompt.
-            let finalPrompt = promptValue;
-            if(refPreview.src && refPreview.style.display !== 'none') {
-                finalPrompt = "style of reference, " + promptValue;
-            }
-
-            const encoded = encodeURIComponent(finalPrompt);
-
-            // Using Pollinations Cloudflare Engine
-            const url1 = `https://image.pollinations.ai/p/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
-            
-            const tryLoad = (url) => {
-                return new Promise((resolve, reject) => {
-                    const tempImg = new Image();
-                    tempImg.src = url;
-                    tempImg.onload = () => resolve(url);
-                    tempImg.onerror = () => reject();
-                    setTimeout(reject, 30000);
-                });
-            };
+            canvas.style.display = 'none';
+            downloadBtn.classList.add('d-none');
+            removeBtn.disabled = true;
 
             try {
-                const successfulUrl = await tryLoad(url1);
-                displayImage(successfulUrl);
-            } catch (e) {
-                console.log("Retrying with flux model...");
-                try {
-                    const backupUrl = `https://image.pollinations.ai/p/${encoded}?width=1024&height=1024&seed=${seed + 1}&model=flux`;
-                    const finalUrl = await tryLoad(backupUrl);
-                    displayImage(finalUrl);
-                } catch (err) {
-                    msg.innerHTML = "<span class='text-danger'>Server busy. Try a different prompt.</span>";
-                    msg.classList.remove('d-none');
+                // Config can be empty for default AI settings
+                const config = {
+                    progress: (status, progress) => {
+                        console.log(`Status: ${status} (${Math.round(progress * 100)}%)`);
+                    }
+                };
+
+                // The Magic: Process the image
+                const blob = await imglyRemoveBackground(file, config);
+                
+                // Load the result to Canvas
+                const url = URL.createObjectURL(blob);
+                const ctx = canvas.getContext('2d');
+                const resultImg = new Image();
+                
+                resultImg.onload = () => {
+                    canvas.width = resultImg.width;
+                    canvas.height = resultImg.height;
+                    ctx.drawImage(resultImg, 0, 0);
+                    
+                    canvas.style.display = 'block';
                     loader.classList.add('d-none');
-                    btn.disabled = false;
-                }
+                    
+                    // Setup download
+                    downloadBtn.href = url;
+                    downloadBtn.classList.remove('d-none');
+                    removeBtn.disabled = false;
+                };
+                resultImg.src = url;
+
+            } catch (error) {
+                console.error(error);
+                alert("Error processing image. Make sure you are using a modern browser.");
+                loader.classList.add('d-none');
+                removeBtn.disabled = false;
             }
         });
-
-        function displayImage(url) {
-            img.src = url;
-            img.style.display = 'block';
-            loader.classList.add('d-none');
-            dl.href = url;
-            dl.classList.remove('d-none');
-            btn.disabled = false;
-        }
     </script>
 </body>
 </html>
